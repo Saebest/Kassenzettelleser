@@ -1,77 +1,104 @@
 import cv2
 import easyocr
 import re
+from datetime import date
 from KassenzettelFunctions import *
 from KassenzettelItem import *
 
 reader = easyocr.Reader(['de']) # this needs to run only once to load the model into memory
 
 
-image = cv2.imread('20250927_115312.jpg')
+image = cv2.imread('Aldi2.jpg')
 
 
 
 #resize image for faster reading
-# new_width = min(1000,image.shape[1])
-# ratio = new_width / image.shape[1]
-# new_height = int(image.shape[0] * ratio)
-#resized = cv2.resize(image, (new_width, new_height))
+
+image = resize_image(image,1500)
 result = reader.readtext(image)
-stores = ["Edeka", "REWE","Aldi","go asia","Wolf","Asia Markt","dm"]
-recognisedStore = False
 print(result)
+
+stores = ["Edeka", "REWE","Aldi","go asia","Wolf","Asia Markt","dm"]
+
+
 sort_from_top(result)
+
+dateOfKassenzettel= str(date.today())
+recognisedStore = False
+start = False
+end = False
+gridItems =[]
 
 
 for item in result:
+    text = item[1]
+
+    # is date
+    potentialDate = re.search("[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9][0-9]", text)
+    if potentialDate:
+        dateOfKassenzettel = potentialDate.start()
+
     for possibleStore in stores:
         if item[1].lower().startswith(possibleStore.lower()):
             recognisedStore = possibleStore
-            break
 
-start = False
-
-
-for item in result:
-    text = item[1]
     if not start:
         if text.lower() == "eur":
             start = item
-            break
+            print(start)
+
+    if not end:
+        if text.lower().replace(" ", "") == "summe":
+            end = item
+
+    if start and not end:
+        gridItems.append(item)
+
 
 kassenzettelItems=[]
+
+usedItemList = gridItems if gridItems else result
+
 for item in result:
+    index = result.index(item)
     text = item[1]
-    #print(text)
+    print(text)
     if same_column(item,start):
         price = False
         #Price is recognised with A or B
-        if re.search("^[0-9]*[,.][0-9][0-9] [abAB]$", text):
-            print("Good",text)
+        if re.search("^[0-9]*[,.][0-9][0-9] [abAB]W?$", text):
             price = re.sub(" [abAB]","",text)
         # Price is recognised without A or B
         elif re.search("^[0-9]*[,.][0-9][0-9]$", text):
-                print(text)
-                for other in result:
-                    if same_row(item,other) and re.search(other[1],"^[abAB]$") and get_x(item) < get_x(other):
+                for other in other_items_within_range(result,item,5):
+                    if re.search("^[abAB]W?$",other[1]) and get_x(item) < get_x(other):
                         price = text
                         break
         if price:
-            potentialItemNames = []
-            for other in result:
-                if same_row(item,other) and len(other[1]) > 3 and not other[1] == text:
-                    for part in other[1].split():
-                        if len(part) > 1 and not re.search("^[0-9]+$",part):
-                            potentialItemNames.append(part)
+            potentialItemName = ""
+            closestNameCandidate= (None,get_y(item))
+            for other in other_items_within_range(result,item,5):
+                distance = abs(get_y(item) - get_y(other))
+                if distance < closestNameCandidate[1]:
+                    closestNameCandidate = (other,distance)
 
-            name = max(potentialItemNames, key=len)
-            if not name == "Pfand":
-                kassenzettelItems.append(KassenzettelItem(price, name))
+            potentialNameParts = []
+            for other in other_items_within_range(result, item, 5):
+                if closestNameCandidate[0] and get_height(closestNameCandidate[0])/2 > abs(get_y(closestNameCandidate[0])-get_y(other)):
+                    potentialNameParts.append(other)
+
+            potentialNameParts.sort(key=lambda potential_name_part: abs(get_y(item) - get_y(potential_name_part)),reverse=True)
+            for namePart in  potentialNameParts:
+                if len(namePart[1]) > 3 and not namePart[1] == text:
+                        for part in namePart[1].split():
+                            if len(part) > 1 and not re.search("^[0-9]+$",part):
+                                potentialItemName += " " +part
+            potentialItemName = potentialItemName.strip()
+            if not re.search("Pfand|Summe|Total",potentialItemName):
+                kassenzettelItems.append(KassenzettelItem(price, potentialItemName, dateOfKassenzettel))
 
 
-kassenzettelItems
-
-print("Du warst im",recognisedStore)
+print("Du warst am",dateOfKassenzettel, "im",recognisedStore)
 print("Und hast folgendes gekauft:")
 for item in kassenzettelItems:
     print(item.name, item.price)
