@@ -5,24 +5,27 @@ from datetime import date
 from KassenzettelFunctions import *
 from KassenzettelItem import *
 
+decimal = "[0-9]*[,.;:][0-9][0-9]"
+
+AorB = "[abAB48]W?"
+
 reader = easyocr.Reader(['de']) # this needs to run only once to load the model into memory
 
 
-image = cv2.imread('Aldi2.jpg')
+image = cv2.imread('Edeka2.jpg')
 
-
+image = make_image_better(image)
 
 #resize image for faster reading
-
-image = resize_image(image,1500)
+image = resize_image(image,False)
 result = reader.readtext(image)
-print(result)
+
 
 stores = ["Edeka", "REWE","Aldi","go asia","Wolf","Asia Markt","dm"]
 
 
 sort_from_top(result)
-
+print([i[1] for i in result])
 dateOfKassenzettel= str(date.today())
 recognisedStore = False
 start = False
@@ -43,7 +46,7 @@ for item in result:
             recognisedStore = possibleStore
 
     if not start:
-        if text.lower() == "eur":
+        if text.lower() == "eur" or text.lower() == "evur" :
             start = item
             print(start)
 
@@ -55,23 +58,34 @@ for item in result:
         gridItems.append(item)
 
 
+if not start:
+    for item in result:
+        inColumn = 0
+        for other in other_items_within_range(result, item, 15):
+            if same_column(item,other):
+                inColumn += 1
+        if inColumn > 1:
+            item = start
+            break
+
+
 kassenzettelItems=[]
 
 usedItemList = gridItems if gridItems else result
 
-for item in result:
+for item in usedItemList:
     index = result.index(item)
     text = item[1]
     print(text)
     if same_column(item,start):
         price = False
         #Price is recognised with A or B
-        if re.search("^[0-9]*[,.][0-9][0-9] [abAB]W?$", text):
+        if re.search(("^" + decimal + " %s$") % AorB, text):
             price = re.sub(" [abAB]","",text)
         # Price is recognised without A or B
-        elif re.search("^[0-9]*[,.][0-9][0-9]$", text):
+        elif re.search("^%s$" % decimal, text):
                 for other in other_items_within_range(result,item,5):
-                    if re.search("^[abAB]W?$",other[1]) and get_x(item) < get_x(other):
+                    if re.search("^%s$" % AorB, other[1]) and get_x(item) < get_x(other):
                         price = text
                         break
         if price:
@@ -94,7 +108,7 @@ for item in result:
                             if len(part) > 1 and not re.search("^[0-9]+$",part):
                                 potentialItemName += " " +part
             potentialItemName = potentialItemName.strip()
-            if not re.search("Pfand|Summe|Total",potentialItemName):
+            if not re.search("pfand|summe|total",potentialItemName.lower()):
                 kassenzettelItems.append(KassenzettelItem(price, potentialItemName, dateOfKassenzettel))
 
 

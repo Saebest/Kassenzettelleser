@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 def sort_from_top(list):
     return list.sort(key=get_y)
 
@@ -53,3 +54,40 @@ def resize_image(image,max_size = False):
     ratio = new_width / image.shape[1]
     new_height = int(image.shape[0] * ratio)
     return cv2.resize(image, (new_width, new_height))
+
+def make_image_better(img):
+    # --- Step 1: Normalize blue background to white ---
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    lower_blue = np.array([90, 50, 50])
+    upper_blue = np.array([130, 255, 255])
+    mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+    img[mask_blue > 0] = (255, 255, 255)
+
+    # --- Step 2: Grayscale ---
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # --- Step 3: Adaptive threshold (works locally, not globally) ---
+    thresh = cv2.adaptiveThreshold(
+        gray, 255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        31, 10
+    )
+    # Invert: text = white, background = black (needed for connectedComponents)
+    thresh_inv = cv2.bitwise_not(thresh)
+
+    # Connected component analysis
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(thresh_inv, connectivity=8)
+
+    # Create mask keeping components larger than a threshold
+    clean_mask = np.zeros_like(thresh_inv)
+
+    for i in range(1, num_labels):  # skip background
+        if stats[i, cv2.CC_STAT_AREA] > 30:  # tweak this value
+            clean_mask[labels == i] = 255
+
+    # Invert back to text = black, background = white
+    clean = cv2.bitwise_not(clean_mask)
+    cv2.imwrite("cleaned.png", clean)
+    clean = cv2.bitwise_not(thresh)
+    return clean
