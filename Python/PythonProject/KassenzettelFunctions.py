@@ -88,6 +88,27 @@ def make_image_better(img):
 
     # Invert back to text = black, background = white
     clean = cv2.bitwise_not(clean_mask)
-    cv2.imwrite("cleaned.png", clean)
+    cv2.imwrite("images/cleaned.png", clean)
     clean = cv2.bitwise_not(thresh)
     return clean
+
+def cut_out_part(image,x1,x2,y1,y2,name="cropped"):
+    cropped = image[y1:y2, x1:x2]
+    cv2.imwrite("images/cropped/"+name+".png", cropped)
+    return cropped
+
+def cut_out_part_of_item(image,item):
+    # [[top-left], [top-right], [bottom-right], [bottom-left]]
+    coordinates = item[0]
+    top_left = coordinates[0]
+    bottom_right = coordinates[2]
+    return cut_out_part(image,top_left[0],bottom_right[0],top_left[1],bottom_right[1],item[1])
+
+def cut_out_items(image,list):
+    # [[top-left], [top-right], [bottom-right], [bottom-left]]
+    x1 = min(list, key=lambda item: item[0][0][0])[0][0][0]
+    y1 = min(list, key=lambda item: item[0][0][1])[0][0][1]
+    x2 = max(list, key=lambda item: item[0][2][0])[0][2][0]
+    y2 = max(list, key=lambda item: item[0][2][1])[0][2][1]
+
+    return cut_out_part(image, x1, x2, y1, y2,list[0][1])
