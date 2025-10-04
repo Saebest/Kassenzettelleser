@@ -1,47 +1,61 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-
-	"google.golang.org/api/option"
-	"google.golang.org/api/sheets/v4"
+	"mime/multipart"
+	"net/http"
 )
 
-func main() {
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("Hello, World!")
-	start()
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Cant read image", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	pr, pw := io.Pipe()
+	wr := multipart.NewWriter(pw)
+	go func() {
+		p, _ := wr.CreateFormFile("file", fileHeader.Filename)
+		io.Copy(p, file)
+		wr.Close()
+		pw.Close()
+	}()
+	//POST request
+	req, err := http.NewRequest("POST", "http://localhost:5000/size", pr)
+	req.Header.Set("Content-Type", wr.FormDataContentType())
+	fmt.Print(req)
+	resp, _ := http.DefaultClient.Do(req)
+
+	if err != nil || resp.StatusCode != http.StatusOK {
+		http.Error(w, "Cant read image", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	var result map[string]int
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	var width, height int = result["width"], result["height"]
+	fmt.Fprintf(w, `{"width": %d, "height": %d}`, width, height)
 }
 
-func start() {
-	// Load credentials from the JSON file
-	credentialsFile := "credentials.json"
-	ctx := context.Background()
-	srv, err := sheets.NewService(ctx, option.WithCredentialsFile(credentialsFile))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Sheets client: %v", err)
-	}
+func main() {
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/", fs)
+	http.HandleFunc("/upload", uploadHandler)
 
-	// Define the spreadsheet ID and range
-	spreadsheetID := "your-spreadsheet-id"
-	readRange := "Sheet1!A1:D10"
-
-	// Fetch the data
-	resp, err := srv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve data from sheet: %v", err)
-	}
-
-	// Print the data
-	if len(resp.Values) == 0 {
-		fmt.Println("No data found.")
-	} else {
-		for _, row := range resp.Values {
-			rowJSON, _ := json.Marshal(row)
-			fmt.Println(string(rowJSON))
-		}
-	}
+	log.Println("Server running on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

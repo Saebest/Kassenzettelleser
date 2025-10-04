@@ -4,7 +4,7 @@ import re
 from datetime import date
 from KassenzettelFunctions import *
 from KassenzettelItem import *
-def read_Image(name):
+def read_image(name):
     decimal = "[0-9]*[ ,.;:][0-9][0-9]"
 
     AorB = "[abAB48&]W?"
