@@ -18,12 +18,13 @@
 
       try {
          const res = await fetch("/upload", { method: "POST", body: formData });
+        const res = await fetch("/upload", { method: "POST", body: formData });
         const data = await res.json();
 
         if (data.error) {
           result.textContent = "Error: " + data.error;
         } else {
-          result.textContent = `Dimensions: ${data.width} x ${data.height}`;
+          result.textContent = `Du hast ${data.menge} Sachen gekauft!`;
         }
       } catch (err) {
         result.textContent = "Upload failed: " + err.message;

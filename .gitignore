@@ -2,3 +2,4 @@
 **/.idea/**
 **/images
 **/cropped
+/Python/PythonProject/__pycache__/

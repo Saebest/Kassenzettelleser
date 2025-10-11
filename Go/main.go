@@ -33,7 +33,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	//POST request
 	req, err := http.NewRequest("POST", "http://localhost:5000/size", pr)
 	req.Header.Set("Content-Type", wr.FormDataContentType())
-	fmt.Print(req)
 	resp, _ := http.DefaultClient.Do(req)
 
 	if err != nil || resp.StatusCode != http.StatusOK {
@@ -47,8 +46,9 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
-	var width, height int = result["width"], result["height"]
-	fmt.Fprintf(w, `{"width": %d, "height": %d}`, width, height)
+	var width, height, menge int = result["width"], result["height"], result["menge"]
+	fmt.Println("Width:", width, "Height:", height, "Menge:", menge)
+	fmt.Fprintf(w, `{"width": %d, "height": %d, "menge": %d}`, width, height, menge)
 }
 
 func main() {
