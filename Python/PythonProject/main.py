@@ -13,13 +13,14 @@ def index():
 
 @app.route("/size", methods=["POST"])
 def upload():
-    print(request.files)
+    print("Recieved File",request.files)
     file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
-
+    print(leser.reader)
     img = Image.open(io.BytesIO(file.read()))
     output = leser.read_image(img)
+
     print(output)
     width, height = img.size
     return jsonify({"width": int(width), "height": int(height),"menge": int(len(output.items))})

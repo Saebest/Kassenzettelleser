@@ -8,8 +8,8 @@ decimal = "[0-9]*[ ,.;:][0-9][0-9]"
 AorB = "[abAB48&]W?"
 
 class KassezettelLeser:
-    reader = easyocr.Reader(['de'])  # this needs to run only once to load the model into memory
-
+    reader = easyocr.Reader(['de','en'])  # this needs to run only once to load the model into memory
+    print("Test")
 
     def __init__(self):
         pass

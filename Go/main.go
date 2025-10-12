@@ -10,6 +10,7 @@ import (
 )
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("message received")
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
@@ -56,6 +57,6 @@ func main() {
 	http.Handle("/", fs)
 	http.HandleFunc("/upload", uploadHandler)
 
-	log.Println("Server running on :8080")
+	log.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
