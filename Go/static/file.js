@@ -4,6 +4,7 @@
     const previewImg = document.getElementById("previewImg");
 
     uploadBtn.addEventListener("click", async () => {
+      result.textContent = "Laden... Sorry dass es so lange dauert!";
       const file = fileInput.files[0];
       if (!file) {
         result.textContent = "Please select an image first.";
@@ -23,7 +24,7 @@
         if (data.error) {
           result.textContent = "Error: " + data.error;
         } else {
-          result.textContent = `Du hast ${data.menge} Sachen gekauft!`;
+          result.textContent = `Du warst am ${data.datum} im ${data.laden} einkaufen!`;
         }
       } catch (err) {
         result.textContent = "Upload failed: " + err.message;

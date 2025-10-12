@@ -41,15 +41,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	var result map[string]int
+	var result map[string]any
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	fmt.Println(result)
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
-	var width, height, menge int = result["width"], result["height"], result["menge"]
-	fmt.Println("Width:", width, "Height:", height, "Menge:", menge)
-	fmt.Fprintf(w, `{"width": %d, "height": %d, "menge": %d}`, width, height, menge)
+
+	laden := result["laden"].(string)
+	datum := result["datum"]
+	fmt.Println(laden, datum)
+	fmt.Fprintf(w, `{"laden": %q, "datum": %q}`, laden, datum)
 }
 
 func main() {
@@ -57,6 +60,7 @@ func main() {
 	http.Handle("/", fs)
 	http.HandleFunc("/upload", uploadHandler)
 
+	http.Handle("/favicon.ico", http.FileServer(http.Dir(".")))
 	log.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

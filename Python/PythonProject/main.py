@@ -20,10 +20,9 @@ def upload():
     print(leser.reader)
     img = Image.open(io.BytesIO(file.read()))
     output = leser.read_image(img)
-
-    print(output)
-    width, height = img.size
-    return jsonify({"width": int(width), "height": int(height),"menge": int(len(output.items))})
+    json = output.to_json()
+    print(json)
+    return json
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000,host="0.0.0.0")
