@@ -13,11 +13,13 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("message received")
 
 	if r.Method != http.MethodPost {
+		fmt.Println("only POST allowed")
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println("cant read file")
 		http.Error(w, "Cant read image", http.StatusInternalServerError)
 		return
 	}
@@ -37,6 +39,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	resp, _ := http.DefaultClient.Do(req)
 
 	if err != nil || resp.StatusCode != http.StatusOK {
+		fmt.Println("Python script can't read image")
 		http.Error(w, "Cant read image", http.StatusInternalServerError)
 		return
 	}
@@ -45,6 +48,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	fmt.Println(result)
 	if err != nil {
+		fmt.Println("Json decode error")
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}

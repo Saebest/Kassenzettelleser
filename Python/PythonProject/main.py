@@ -13,16 +13,19 @@ def index():
 
 @app.route("/size", methods=["POST"])
 def upload():
-    print("Recieved File",request.files)
+    print("Received File",request.files)
     file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
     print(leser.reader)
     img = Image.open(io.BytesIO(file.read()))
-    output = leser.read_image(img)
-    json = output.to_json()
-    print(json)
-    return json
+    try:
+        output = leser.read_image(img)
+        json = output.to_json()
+        print(json)
+        return json
+    except Exception:
+        return jsonify({"error": "Unable to read image"}), 400
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000,host="0.0.0.0")

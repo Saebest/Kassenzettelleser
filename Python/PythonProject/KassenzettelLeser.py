@@ -9,13 +9,15 @@ AorB = "[abAB48&]W?"
 
 class KassezettelLeser:
     reader = easyocr.Reader(['de','en'])  # this needs to run only once to load the model into memory
-    print("Test")
 
     def __init__(self):
         pass
 
-    def read_image(self,image):
-        image = cv2.imread('images/'+'go asia.jpg')
+    def read_image(self,input_img):
+        #For some reason images rote 90 degrees before being read???
+        input_img.rotate(90, expand=True).save("temporary.jpg")
+        print(input_img)
+        image = cv2.imread("temporary.jpg")
 
         image = make_image_better(image)
 
@@ -33,6 +35,7 @@ class KassezettelLeser:
         start = False
         end = False
         gridItems =[]
+
 
         for item in result:
             text = item[1]
@@ -74,11 +77,16 @@ class KassezettelLeser:
         ausgabe = KassenzettelResult(recognisedStore,dateOfKassenzettel)
 
         used_item_list = gridItems if gridItems else result
+        if not start:
+            return Exception("Cant read Image")
 
         for item in used_item_list:
             index = result.index(item)
             text = item[1]
             print(text)
+            if not isinstance(item, tuple):
+                print(item)
+                continue
             if same_column(item,start):
                 price = False
                 #Price is recognised with A or B
