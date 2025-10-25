@@ -1,4 +1,4 @@
-from datetime import date
+
 import json
 
 class KassenzettelItem:
@@ -18,7 +18,7 @@ class KassenzettelItem:
 class KassenzettelResult:
     items = []
     laden = ""
-    datum = str(date.today())
+    datum =""
 
     def __init__(self,laden,datum):
         self.laden = laden

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"kassenzettelLeser/leser"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("message received")
-
+	leser.Read()
 	if r.Method != http.MethodPost {
 		fmt.Println("only POST allowed")
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)

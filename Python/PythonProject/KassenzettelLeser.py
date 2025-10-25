@@ -3,6 +3,8 @@ import easyocr
 import re
 from KassenzettelFunctions import *
 from KassenzettelItem import KassenzettelItem,KassenzettelResult
+from datetime import date, datetime
+from PIL import Image, ExifTags
 
 decimal = "[0-9]*[ ,.;:][0-9][0-9]"
 AorB = "[abAB48&]W?"
@@ -14,9 +16,26 @@ class KassezettelLeser:
         pass
 
     def read_image(self,input_img):
-        #For some reason images rote 90 degrees before being read???
-        input_img.rotate(90, expand=True).save("temporary.jpg")
+        exif_data = input_img._getexif()
+        metadata_date = None
+        if not exif_data:
+            print("Can't read metadata date")
+        else:
+            for tag_id, value in exif_data.items():
+                tag = ExifTags.TAGS.get(tag_id, tag_id)
+                if tag in ["DateTime", "DateTimeOriginal", "DateTimeDigitized"]:
+                    dt = datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
+                    metadata_date = dt.strftime("%d.%m.%Y")
+                    print("Determined date to be", metadata_date)
+                    continue
+
+      #  input_img =  input_img.rotate(180, expand=True)
+
+        input_img.save("temporary.jpg")
+
+
         print(input_img)
+
         image = cv2.imread("temporary.jpg")
 
         image = make_image_better(image)
@@ -30,7 +49,7 @@ class KassezettelLeser:
 
         sort_from_top(result)
         print([i[1] for i in result])
-        dateOfKassenzettel = False
+        dateOfKassenzettel =  metadata_date if metadata_date else str(date.today())
         recognisedStore = "Unbekannt"
         start = False
         end = False
@@ -130,4 +149,5 @@ class KassezettelLeser:
         print("Und hast folgendes gekauft:")
         for item in ausgabe.items:
             print(item.name, item.price)
+
         return ausgabe

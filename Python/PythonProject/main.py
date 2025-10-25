@@ -17,7 +17,6 @@ def upload():
     file = request.files.get("file")
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
-    print(leser.reader)
     img = Image.open(io.BytesIO(file.read()))
     try:
         output = leser.read_image(img)
