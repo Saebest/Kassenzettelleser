@@ -24,7 +24,7 @@
         if (data.error) {
           result.textContent = "Error: " + data.error;
         } else {
-          result.textContent = `Du warst am ${data.datum} im ${data.laden} einkaufen!`;
+          result.textContent = data;
         }
       } catch (err) {
         result.textContent = "Upload failed: " + err.message;

@@ -1,5 +1,7 @@
 package leser
 
-type kassenzettelLeser interface {
-	ReadKassenzettel()
+import "mime/multipart"
+
+type KassenzettelLeser interface {
+	ReadKassenzettel(image multipart.File) (string, error)
 }
