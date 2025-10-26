@@ -37,15 +37,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", out)
 }
 
-func rescue(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		fmt.Println("Unexpected panic", r)
-		http.Error(w, "Irgendwas ist kaputt gegangen, Sorry", http.StatusInternalServerError)
-	}
-}
 func rescueDecorator(function func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() { rescue(w) }()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Unexpected panic", r)
+				http.Error(w, "Irgendwas ist kaputt gegangen, Sorry", http.StatusInternalServerError)
+			}
+		}()
 		function(w, r)
 	}
 }
